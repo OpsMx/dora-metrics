@@ -1,5 +1,12 @@
-from flask import Flask, request, jsonify
+#from flask import Flask, request, jsonify
 import logging
+
+try:
+    from flask import Flask, request, jsonify, abort
+except ImportError:
+    # If not installed, install PyGithub
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "flask"])
+    from flask import Flask, request, jsonify  # Import again after installation
 
 app = Flask(__name__)
 
