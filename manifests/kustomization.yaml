@@ -1,0 +1,8 @@
+resources:
+  - manifests/deployment.yaml
+  - manifests/service.yaml
+
+configMapGenerator:
+  - name: main
+    files:
+      - main.py=main.py

@@ -1,0 +1,30 @@
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dora-metrics
+  namespace: argocd
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: dora-metrics
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: dora-metrics
+    spec:
+      containers:
+        - name: main
+          image: python:latest
+          command: ["python"]
+          args: ["/app/main.py"]
+          ports:
+            - containerPort: 5000
+              name: http
+            - name: main
+              mountPath: "/app/main.py"
+              subPath: "main.py"
+      volumes:
+        - name: main
+          configMap:
+            name: main
