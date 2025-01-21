@@ -1,4 +1,4 @@
-# dora-metrics
-clone this repo
-cd dora-metrics
-kubectl apply -k .
+# dora-metrics  
+clone this repo  
+cd dora-metrics  
+kubectl apply -k .  
