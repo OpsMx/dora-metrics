@@ -9,10 +9,10 @@ from threading import Thread
 
 
 try:
-    from prometheus_client import start_http_server,CollectorRegistry, Gauge, push_to_gateway
+    from prometheus_client import start_http_server,CollectorRegistry, Gauge, generate_latest
 except ImportError:
     subprocess.check_call([sys.executable, "-m", "pip", "install", "prometheus_client"])
-    from prometheus_client import start_http_server,CollectorRegistry, Gauge, push_to_gateway
+    from prometheus_client import start_http_server,CollectorRegistry, Gauge, generate_latest
 
 
 try:
@@ -28,7 +28,7 @@ app = Flask(__name__)
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-PUSHGATEWAY_URL = "http://prometheus-pushgateway.default.svc.cluster.local:9091"
+#PUSHGATEWAY_URL = "http://prometheus-pushgateway.default.svc.cluster.local:9091"
 
 # Define Prometheus metrics
 #registry = CollectorRegistry()
@@ -91,12 +91,7 @@ def webhook():
         time_from_commit_to_start_sync.labels(application=application, instance=application).set((started_at - committed_at).total_seconds())
         time_to_sync.labels(application=application, instance=application).set((finished_at - started_at).total_seconds())
 
-        # Push to Pushgateway
-        registry = CollectorRegistry()
-        registry.register(time_from_commit_to_start_sync)
-        registry.register(time_to_sync)
-        push_to_gateway(PUSHGATEWAY_URL, job='sync_metrics', registry=registry)
-        logger.info("Metrics pushed to Pushgateway.")
+        
 
         return jsonify({"status": "success"}), 200
 
@@ -105,6 +100,13 @@ def webhook():
         return jsonify({"error": "Internal server error"}), 500
 
 
+@app.route('/metrics')
+def metrics():
+    # Expose the metrics in Prometheus format
+    registry = CollectorRegistry()
+    registry.register(time_from_commit_to_start_sync)
+    registry.register(time_to_sync)
+    return generate_latest(registry), 200
 
 if __name__ == '__main__':
 
