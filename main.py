@@ -16,7 +16,7 @@ except ImportError:
 
 
 try:
-    from flask import Flask, request, jsonify, abort
+    from flask import Flask, request, jsonify, abort, Response
 except ImportError:
     # If not installed, install PyGithub
     subprocess.check_call([sys.executable, "-m", "pip", "install", "flask"])
@@ -106,7 +106,8 @@ def metrics():
     registry = CollectorRegistry()
     registry.register(time_from_commit_to_start_sync)
     registry.register(time_to_sync)
-    return generate_latest(registry), 200
+    #return generate_latest(registry), 200
+    return Response(generate_latest(registry), content_type="text/plain")
 
 if __name__ == '__main__':
 
