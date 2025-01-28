@@ -1,4 +1,3 @@
-
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -14,17 +13,9 @@ spec:
     spec:
       containers:
         - name: main
-          image: python:latest
+          image: shiveshabhishek/dora-metrics:v1
           command: ["python"]
           args: ["/app/main.py"]
           ports:
             - containerPort: 5000
               name: http
-          volumeMounts:
-            - name: main
-              mountPath: "/app/main.py"
-              subPath: "main.py"
-      volumes:
-        - name: main
-          configMap:
-            name: main
