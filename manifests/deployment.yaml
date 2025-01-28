@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: main
-          image: python:latest
+          image: quay.io/opsmxpublic/dora-metrics:v1  
           # command: ["python"]
           # args: ["/app/main.py"]
           ports:
