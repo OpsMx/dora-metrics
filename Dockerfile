@@ -5,12 +5,11 @@ FROM python:3.9-slim
 WORKDIR /app
 
 # Copy the application code into the container
-COPY . /app
+COPY main.py /app
 
-# Install dependencies (if there's a requirements.txt file)
-COPY requirements.txt .
+COPY requirements.txt /tmp/
 
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r /tmp/requirements.txt
 
 # Set the command and arguments
 CMD ["python", "/app/main.py"]
