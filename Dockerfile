@@ -21,4 +21,4 @@ EXPOSE 5000
 ENV PYTHONUNBUFFERED=1
 
 # Run the application
-CMD ["python", "app.py"]
+CMD ["sh", "-c", "python /app/main.py"]
