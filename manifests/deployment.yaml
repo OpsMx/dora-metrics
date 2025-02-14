@@ -14,17 +14,17 @@ spec:
     spec:
       containers:
         - name: main
-          image: python:latest
-          command: ["python"]
-          args: ["/app/main.py"]
+          image: quay.io/opsmxpublic/dora-metrics:v1  
+          # command: ["python"]
+          # args: ["/app/main.py"]
           ports:
             - containerPort: 5000
               name: http
-          volumeMounts:
-            - name: main
-              mountPath: "/app/main.py"
-              subPath: "main.py"
-      volumes:
-        - name: main
-          configMap:
-            name: main
+      #     volumeMounts:
+      #       - name: main
+      #         mountPath: "/app/main.py"
+      #         subPath: "main.py"
+      # volumes:
+      #   - name: main
+      #     configMap:
+      #       name: main
