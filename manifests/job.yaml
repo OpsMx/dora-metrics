@@ -1,0 +1,19 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: get-argocd-apps
+  namespace: argocd
+spec:
+  template:
+    spec:
+      serviceAccountName: argocd-app-viewer-sa
+      containers:
+        - name: kubectl
+          image: bitnami/kubectl:latest
+          command:
+            - /bin/sh
+            - -c
+            - "kubectl get applications.argoproj.io -n argocd"
+      restartPolicy: Never
+  backoffLimit: 0
+
