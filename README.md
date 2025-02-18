@@ -82,3 +82,11 @@ kubectl apply -k .
         }
     }
 ]
+
+
+3. Where will be the projectname stored in the Image metadata? Or if we have an API, what will be its specification?
+
+
+
+
+
