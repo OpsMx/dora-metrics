@@ -2,7 +2,7 @@
 clone this repo  
 cd dora-metrics  
 kubectl apply -k .  
-
+ What is the exact criteria to know that a service now check has passed? Some criterias were mentioned like being within a time window, specific value of a field. What will be the full criteria
 
 // Sample docker inspect data.
 
