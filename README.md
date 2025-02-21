@@ -4,20 +4,35 @@ cd dora-metrics
 kubectl apply -k .  
  
 
+# Makefile for building the argocd-policy-plugin
 
-Is the Authentication mechanism for Facade Layer will be OIDC?
-If yes, can I configure my client service's (policy-service's) properties file in the below standard oauth2/oidc format? Can you provide the <server-name> value in the specific case?
-spring:
-  security:
-    oauth2:
-      client:
-        registration:
-          <server-name>:
-            provider: my-oidc
-            client-id: <client-id>
-            client-secret: <client-secret>
-            authorization-grant-type: <grant-type>
-            scope: <scope>
-        provider:
-          my-oidc:
-            token-uri: <https://your-oidc-provider.com/oauth/token>
+BINARY_NAME := argocd-policy-plugin
+BUILD_DIR := bin
+
+# Default target
+.PHONY: all
+all: build
+
+# Build target
+.PHONY: build
+build:
+	@echo "Building $(BINARY_NAME) for Linux amd64"
+	GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o $(BUILD_DIR)/$(BINARY_NAME)
+
+# Clean target to remove build artifacts
+.PHONY: clean
+clean:
+	@rm -rf $(BUILD_DIR)
+	@rm -f test-report.json
+	@rm -f coverage.out
+
+# Format Go files
+.PHONY: fmt
+fmt:
+	@go fmt ./...
+
+# Tidy up Go modules
+.PHONY: tidy
+tidy:
+	@go mod tidy -v
+
