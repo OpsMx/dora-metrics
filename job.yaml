@@ -1,0 +1,40 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: get-argocd-apps
+  namespace: argocd
+spec:
+  template:
+    spec:
+      serviceAccountName: argocd-app-viewer-sa
+      containers:
+        - name: kubectl
+          image: bitnami/kubectl:latest
+          command:
+            - /bin/sh
+            - -c
+            - |
+              # Step 1: Sleep for 5 seconds before starting the script
+              echo "Sleeping for 5 seconds before starting..."
+              sleep 5s
+
+              # Step 2: Execute the script from ConfigMap
+              cp /scripts/get-argocd-app-status.sh /tmp/
+              
+              chmod +x /tmp/get-argocd-app-status.sh
+
+              bash /tmp/get-argocd-app-status.sh
+
+          volumeMounts:
+            - name: storage
+              mountPath: /data
+            - name: script-volume
+              mountPath: /scripts
+      volumes:
+        - name: storage
+          emptyDir: {}
+        - name: script-volume
+          configMap:
+            name: argocd-app-status-script
+      restartPolicy: Never
+  backoffLimit: 0
