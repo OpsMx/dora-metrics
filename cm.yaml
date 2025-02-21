@@ -1,0 +1,79 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: argocd-app-status-script
+  namespace: argocd
+data:
+  get-argocd-app-status.sh: |
+    #!/bin/sh
+
+
+    previous_version_file="/data/previous_version.txt"
+
+    # Initialize previous_version if file exists
+    if [ -f "$previous_version_file" ]; then
+      previous_version=$(cat "$previous_version_file")
+      echo $previous_version
+    else
+      previous_version=""
+    fi
+
+    while true; do
+      # Step 1: Get the current Argo CD version
+      current_version=$(kubectl -n argocd get deployment argocd-server -o=jsonpath='{.metadata.labels.app\.kubernetes\.io/version}')
+
+      if [ -z "$current_version" ]; then
+        echo "Failed to retrieve Argo CD version. Retrying in 5 minutes."
+      else
+        echo "Current Argo CD version: $current_version"
+
+        # Check if version has changed
+        echo $current_version
+        echo $previous_version
+
+        if [ "$current_version" != "$previous_version" ]; then
+          echo "Version change detected! Previous version: $previous_version, New version: $current_version"
+
+          # Step 2: Save the application statuses to a version-specific file
+          version_file="/data/argocd-app-status-$current_version.txt"
+          kubectl get applications.argoproj.io -n argocd > "$version_file"
+          echo "Application statuses saved to $version_file"
+
+          # Step 3: Wait 5 minutes to ensure stabilization
+          echo "Waiting 5 minutes to ensure Argo CD stabilization."
+          sleep 3
+
+          # Step 4: Save application statuses again after stabilization
+          stabilized_file="/data/argocd-app-status-$current_version-stabilized.txt"
+          kubectl get applications.argoproj.io -n argocd > "$stabilized_file"
+          echo "Stabilized application statuses saved to $stabilized_file"
+
+          # Step 5: Compare with the previous version file if it exists
+          if [ -n "$previous_version" ]; then
+            previous_version_file_path="/data/argocd-app-status-$previous_version.txt"
+            if [ -f "$previous_version_file_path" ]; then
+              echo "Comparing $previous_version_file_path with $stabilized_file:"
+              if diff "$previous_version_file_path" "$stabilized_file"; then
+                echo "No differences found between Argo CD app statuses."
+              else
+                echo "Differences found between Argo CD app statuses!"
+              fi
+            else
+              echo "Previous version file $previous_version_file_path not found for comparison."
+            fi
+          fi
+
+          # Step 6: Update the previous version
+          echo "$current_version" > "$previous_version_file"
+          sync  # Ensure file system flushes changes
+          echo "Updated previous_version.txt to $current_version"
+          cat "$previous_version_file"
+          previous_version="$current_version"
+        else
+          echo "No version change detected $previous_version and $current_version. Skipping comparison."
+        fi
+      fi
+
+      # Check again in 5 minutes
+      sleep 60
+    done
