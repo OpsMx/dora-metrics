@@ -1,6 +1,11 @@
 apiVersion: v1
 data:
   context: |
+  subscriptions: |
+    - recipients:
+      - dora-metrics
+      triggers:
+      - on-sync-succeeded-metrics
   service.webhook.dora-metrics: |
     url: http://dora-metrics:5000
     headers: # optional headers
