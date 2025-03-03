@@ -1,0 +1,32 @@
+apiVersion: v1
+data:
+  context: |
+  service.webhook.dora-metrics: |
+    url: http://dora-metrics:5000
+    headers: # optional headers
+    - name: Content-type
+      value: application/json
+
+  template.dora-metrics: |
+    webhook:
+      dora-metrics:
+        method: POST
+        path: /webhook
+        body: |
+           {"application": "{{.app.metadata.name}}",
+           "committedAt": "{{ (call .repo.GetCommitMetadata .app.status.operationState.operation.sync.revision).Date.Format "2006-01-02T15:04:05Z" }}",
+           "startedAt": "{{.app.status.operationState.startedAt}}",
+           "finishedAt": "{{.app.status.operationState.finishedAt}}"}
+  
+  trigger.on-sync-succeeded-metrics: |
+    - description: Application syncing has succeeded
+      send:
+      - dora-metrics
+      when: app.status.operationState.phase in ['Succeeded']
+kind: ConfigMap
+metadata:
+  annotations:
+  labels:
+    app.kubernetes.io/instance: argocd-notifications
+  name: argocd-notifications-cm
+  namespace: argocd
