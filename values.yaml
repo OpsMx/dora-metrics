@@ -1,4 +1,45 @@
 
+
+
+notifications:
+  # -- Enable notifications controller
+  enabled: true
+  # -- Argo CD dashboard url; used in place of {{.context.argocdUrl}} in templates
+  # @default -- `""` (defaults to https://`global.domain`)
+  argocdUrl: "https://argocd.dev.onyxplatform.io"
+  subscriptions:
+    - recipients:
+       - dora-metrics
+      triggers:
+       - on-sync-succeeded-metrics
+  notifiers: 
+    service.webhook.dora-metrics: |
+      url: http://dora-metrics:5000
+      headers: #optional headers
+      - name: Content-type
+        value: application/json
+  metrics:
+    enabled: true 
+  templates: 
+    template.dora-metrics: |
+      webhook:
+        dora-metrics:
+          method: POST
+          path: /webhook
+          body: |
+            {"application": "'{{"{{"}}.app.metadata.name{{"{{"}}",
+            "committedAt": "{{"{{"}} (call .repo.GetCommitMetadata .app.status.operationState.operation.sync.revision).Date.Format "2006-01-02T15:04:05Z" {{"{{"}}",
+            "startedAt": "{{"{{"}}.app.status.operationState.startedAt{{"{{"}}",
+            "finishedAt": "{{"{{"}}.app.status.operationState.finishedAt{{"{{"}}"}
+  triggers: 
+    trigger.on-sync-succeeded-metrics: |
+      - description: Application syncing has succeeded
+        send:
+        - dora-metrics
+        when: app.status.operationState.phase in ['Succeeded']
+    
+
+
 repoServer:
   extraContainers:
      - env:
@@ -16,6 +57,8 @@ repoServer:
          value: utkarshopsmx/policy-job:v0.0.12
        - name: TARGET_ENVIRONMENT
          value: dev
+      - name: ARGOCD_NAMESPACE
+          value: argocd
        - name: REGISTRY_CREDS
          valueFrom:
            secretKeyRef:
@@ -58,6 +101,8 @@ repoServer:
           value: utkarshopsmx/policy-job:v0.0.12
         - name: TARGET_ENVIRONMENT
           value: dev
+        - name: ARGOCD_NAMESPACE
+          value: argocd
         - name: REGISTRY_CREDS
           valueFrom:
             secretKeyRef:
