@@ -1,0 +1,84 @@
+name: Validate PR Comment for SNOW Ticket and Approve OR Reject
+
+on:
+  pull_request:
+    types: [opened]
+
+jobs:
+  check-comment:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check if comment contains a valid SNOW Ticket ID
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const pr = context.payload.pull_request;
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const prNumber = pr.number;
+
+            if (!pr) {
+              core.setFailed("Error: No PR data found in the payload.");
+              return;
+            }
+
+            const prBody = pr.body || "";
+            const regex = /(CHG|INC)[0-9]{8}/;
+            const match = prBody.match(regex);
+
+            if (!match) {
+              console.log("❌ No valid SNOW ticket found.");
+              await github.rest.pulls.createReview({
+                owner,
+                repo,
+                pull_number: prNumber,
+                event: "REQUEST_CHANGES",
+                body: "❌ PR Rejected! Please include a valid SNOW ticket (e.g., CHG12345678 or INC12345678)."
+              });
+              core.setFailed("Invalid SNOW ticket.");
+              return;
+            }
+
+            const ticketId = match[0];
+            console.log(`🔎 Found SNOW ticket: ${ticketId}`);
+
+            // API validation
+            const apiUrl = `https://example.com/api?ticket=${ticketId}`;
+            const response = await fetch(apiUrl);
+            
+            if (!response.ok) {
+              core.setFailed(`Error: Unable to fetch data from API.`);
+              return;
+            }
+
+            const data = await response.json();
+            if (!data.change.state || !data.change.startTime || !data.change.endTime) {
+              core.setFailed(`Error: Missing required fields in API response.`);
+              return;
+            }
+
+            const currentTime = Math.floor(Date.now() / 1000);
+            const startTimestamp = Math.floor(new Date(data.startTime).getTime() / 1000);
+            const endTimestamp = Math.floor(new Date(data.endTime).getTime() / 1000);
+
+            if (data.state === "Implement" || ( currentTime >= startTimestamp && currentTime <= endTimestamp)) {
+              console.log("✅ Valid SNOW ticket found. Approving PR...");
+              await github.rest.pulls.createReview({
+                owner,
+                repo,
+                pull_number: prNumber,
+                event: "APPROVE",
+                body: `✅ PR Approved! Valid SNOW ticket (${ticketId}) found.`
+              });
+            } else {
+              console.log("❌ Invalid SNOW ticket state or time window.");
+              await github.rest.pulls.createReview({
+                owner,
+                repo,
+                pull_number: prNumber,
+                event: "REQUEST_CHANGES",
+                body: `❌ PR Rejected! SNOW ticket ${ticketId} is not in a valid state or time window.`
+              });
+              core.setFailed("Invalid SNOW ticket.");
+            }
